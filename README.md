@@ -60,7 +60,7 @@ Clasificación de magnitudes (resumen)
 - Fuerte 6.0–6.9 — Mayor 7.0–7.9 — Épico 8.0–9.9 — Legendario ≥10.0
 
 Autor
-- David Santana (davidd1306)
+- David Santana 
 
 Licencia
 - Consulta el archivo `LICENSE` del repositorio.

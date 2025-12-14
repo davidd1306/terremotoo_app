@@ -136,6 +136,16 @@ with st.spinner("Obteniendo datos del feed..."):
         st.error(f"No se pudo obtener el feed: {e}")
         st.stop()
 
+# Escala global de magnitud (misma para PR y Mundo)
+global_mag_series = pd.to_numeric(df["magnitude"], errors="coerce").dropna()
+if not global_mag_series.empty:
+    mag_min, mag_max = float(global_mag_series.min()), float(global_mag_series.max())
+    # añadir un pequeño padding para visual
+    pad = max(0.1, (mag_max - mag_min) * 0.05 if mag_max > mag_min else 0.5)
+    mag_min, mag_max = mag_min - pad, mag_max + pad
+else:
+    mag_min, mag_max = 0.0, 6.0
+
 if zone == "Puerto Rico":
     df_zone = df[
         (df["latitude"].notna()) &
@@ -192,34 +202,36 @@ if show_table_checkbox and num_events_for_table is not None:
 else:
     st.dataframe(table_to_show.head(2000), height=300)
 
+# Preparar datos para gráficos y usar la misma escala global en los histogramas
+map_df = df_zone.copy()
+map_df["time_str"] = map_df["time"].apply(lambda x: x.strftime("%Y-%m-%d %H:%M:%S") if pd.notnull(x) else "")
+map_df["magnitude"] = pd.to_numeric(map_df["magnitude"], errors="coerce")
+size_base = map_df["magnitude"].fillna(0.0).clip(lower=0.0)
+
+base_factor = 1.2
+if zone == "Mundo":
+    size_factor = base_factor * float(WORLD_SIZE_FACTOR)
+    default_zoom, size_max, sizemin_value = 1, 4, 0.3
+else:
+    size_factor = base_factor * float(PR_SIZE_FACTOR)
+    default_zoom, size_max, sizemin_value = 7, 6, 0.4
+
+map_df["size_plot"] = ((size_base + 0.1) * size_factor).clip(lower=0.3, upper=size_max)
+common_height = 520
+
+# Histograma de magnitudes con misma escala X (mag_min, mag_max)
+fig_mag = px.histogram(map_df, x="magnitude", nbins=30, color_discrete_sequence=["crimson"],
+                       title="Histograma de Magnitudes", range_x=(mag_min, mag_max))
+fig_mag.update_layout(yaxis_title="conteo", xaxis_title="magnitud", height=common_height,
+                      plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+
+fig_depth = px.histogram(map_df, x="depth_km", nbins=30, color_discrete_sequence=["darkred"],
+                         title="Histograma de Profundidades")
+fig_depth.update_layout(yaxis_title="conteo", xaxis_title="profundidad (km)", height=common_height,
+                        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+
+# Mapa (solo se crea si show_map True). Usar range_color con la escala global (mag_min, mag_max)
 if show_map:
-    map_df = df_zone.copy()
-    map_df["time_str"] = map_df["time"].apply(lambda x: x.strftime("%Y-%m-%d %H:%M:%S") if pd.notnull(x) else "")
-    map_df["magnitude"] = pd.to_numeric(map_df["magnitude"], errors="coerce")
-
-    size_base = map_df["magnitude"].fillna(0.0).clip(lower=0.0)
-    base_factor = 1.2
-
-    if zone == "Mundo":
-        size_factor = base_factor * float(WORLD_SIZE_FACTOR)
-        default_zoom, size_max, sizemin_value = 1, 4, 0.3
-    else:
-        size_factor = base_factor * float(PR_SIZE_FACTOR)
-        default_zoom, size_max, sizemin_value = 7, 6, 0.4
-
-    map_df["size_plot"] = ((size_base + 0.1) * size_factor).clip(lower=0.3, upper=size_max)
-    common_height = 520
-
-    fig_mag = px.histogram(map_df, x="magnitude", nbins=30, color_discrete_sequence=["crimson"],
-                           title="Histograma de Magnitudes")
-    fig_mag.update_layout(yaxis_title="conteo", xaxis_title="magnitud", height=common_height,
-                          plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
-
-    fig_depth = px.histogram(map_df, x="depth_km", nbins=30, color_discrete_sequence=["darkred"],
-                             title="Histograma de Profundidades")
-    fig_depth.update_layout(yaxis_title="conteo", xaxis_title="profundidad (km)", height=common_height,
-                            plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
-
     fig_map = px.scatter_mapbox(
         map_df,
         lat="latitude",
@@ -227,22 +239,32 @@ if show_map:
         color="magnitude",
         size="size_plot",
         color_continuous_scale="Turbo",
+        range_color=(mag_min, mag_max),
         size_max=size_max,
         zoom=default_zoom,
         hover_name="place",
         hover_data={"magnitude": True, "depth_km": True, "clasificacion": True, "time_str": True},
         height=common_height,
     )
-    fig_map.update_traces(marker=dict(sizemode="area", sizemin=sizemin_value))
+    fig_map.update_traces(marker=dict(sizemode="area", sizemin=sizemin_value, opacity=0.9),
+                          selector=dict(mode="markers"))
+    # Forzar título del colorbar
+    try:
+        # Intenta ajustar colorbar del marcador (funciona con la traza)
+        fig_map.data[0].marker.colorbar.title = "Magnitud"
+    except Exception:
+        fig_map.update_layout(coloraxis_colorbar=dict(title="Magnitud"))
     fig_map.update_layout(
         mapbox_style="carto-darkmatter",
         margin={"r": 0, "t": 30, "l": 0, "b": 0},
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        coloraxis_colorbar=dict(title="magnitud"),
         title=dict(text="Mapa de Terremotos", x=0.5),
     )
 
+# Mostrar gráficos: si mapa está oculto mostramos solo los histogramas en dos columnas,
+# si está visible mostramos 3 columnas (mapa más ancho)
+if show_map:
     col_a, col_b, col_c = st.columns([1, 1, 1.6], gap="large")
     with col_a:
         st.plotly_chart(fig_mag, use_container_width=True)
@@ -250,3 +272,9 @@ if show_map:
         st.plotly_chart(fig_depth, use_container_width=True)
     with col_c:
         st.plotly_chart(fig_map, use_container_width=True)
+else:
+    col_a, col_b = st.columns([1, 1], gap="large")
+    with col_a:
+        st.plotly_chart(fig_mag, use_container_width=True)
+    with col_b:
+        st.plotly_chart(fig_depth, use_container_width=True)
