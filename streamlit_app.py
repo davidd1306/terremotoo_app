@@ -17,8 +17,8 @@ SEVERITY_OPTIONS = {
 
 PERIOD_OPTIONS = {"mes": "month", "semana": "week", "día": "day"}
 
-PR_SIZE_FACTOR = 0.04
-WORLD_SIZE_FACTOR = 0.04
+PR_SIZE_FACTOR = 0.03
+WORLD_SIZE_FACTOR = 0.03
 
 MESES_ES = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -198,16 +198,16 @@ if show_map:
     map_df["magnitude"] = pd.to_numeric(map_df["magnitude"], errors="coerce")
 
     size_base = map_df["magnitude"].fillna(0.0).clip(lower=0.0)
-    base_factor = 2.0
+    base_factor = 1.2
 
     if zone == "Mundo":
         size_factor = base_factor * float(WORLD_SIZE_FACTOR)
-        default_zoom, size_max, sizemin_value = 1, 6, 0.5
+        default_zoom, size_max, sizemin_value = 1, 4, 0.3
     else:
         size_factor = base_factor * float(PR_SIZE_FACTOR)
-        default_zoom, size_max, sizemin_value = 7, 10, 1
+        default_zoom, size_max, sizemin_value = 7, 6, 0.4
 
-    map_df["size_plot"] = ((size_base + 0.1) * size_factor).clip(lower=0.5, upper=size_max)
+    map_df["size_plot"] = ((size_base + 0.1) * size_factor).clip(lower=0.3, upper=size_max)
     common_height = 520
 
     fig_mag = px.histogram(map_df, x="magnitude", nbins=30, color_discrete_sequence=["crimson"],

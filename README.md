@@ -38,40 +38,34 @@ Esta aplicación obtiene datos de terremotos desde feeds RSS de USGS y los visua
 
 ### Filtros Disponibles
 - **Severidad**: Todos, Significativo, 4.5, 2.5, 1.0
-- **Período**: Mes, Semana, Día
-- **Zona**: Puerto Rico, Mundo
+# Terremotos en Tiempo Real — Puerto Rico y Mundo
 
-### Visualizaciones
-- **Mapa interactivo** con scatter mapbox (zoom ajustable)
-- **Histograma de magnitudes** (Escala Richter)
-- **Histograma de profundidades** (en km)
-- **Tabla de datos** con opción de cantidad de eventos
+App en Streamlit que muestra terremotos en tiempo real (USGS) con mapa, histogramas y tabla.
 
-### Información Mostrada
-- Fecha de última actualización
-- Cantidad total de eventos
-- Magnitud promedio
-- Profundidad promedio
-- Clasificación de magnitud (micro, menor, ligero, moderado, fuerte, mayor, épico, legendario)
+Instalación y ejecución
+- Instala dependencias: `pip install -r requirements.txt`
+- Ejecuta: `streamlit run streamlit_app.py`
+- Abre: `http://localhost:8501`
 
-## 📍 Clasificación de Magnitudes
+Dependencias principales
+- `streamlit`, `quakefeeds`, `pandas`, `plotly`, `numpy`
 
-- **Micro**: < 2.0
-- **Menor**: 2.0 - 3.9
-- **Ligero**: 4.0 - 4.9
-- **Moderado**: 5.0 - 5.9
-- **Fuerte**: 6.0 - 6.9
-- **Mayor**: 7.0 - 7.9
-- **Épico**: 8.0 - 9.9
-- **Legendario**: ≥ 10.0
+Funcionalidades resumidas
+- Filtros: severidad, período, zona (Puerto Rico / Mundo)
+- Visualizaciones: mapa interactivo, histogramas (magnitud, profundidad), tabla de eventos
+- Estadísticas: fecha de actualización, cantidad, magnitud y profundidad promedio
 
-##  Autor
+Clasificación de magnitudes (resumen)
+- Micro <2.0 — Menor 2.0–3.9 — Ligero 4.0–4.9 — Moderado 5.0–5.9
+- Fuerte 6.0–6.9 — Mayor 7.0–7.9 — Épico 8.0–9.9 — Legendario ≥10.0
+
+Autor
+- David Santana (davidd1306)
+
+Licencia
+- Consulta el archivo `LICENSE` del repositorio.
+
+Más detalles completos en el código fuente (`streamlit_app.py`).
+
 
 Desarrollado por: **David Santana**  
-Curso: INGE3016  
-Institución: Universidad de Puerto Rico, Recinto de Humacao
-
-## Licencia
-
-Proyecto bajo la licencia incluida en `LICENSE`
-
